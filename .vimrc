@@ -1,6 +1,8 @@
-" DeMarko's blatantly stolen .vimrc
-"   which you totally should not feel guilty about stealing either
-"   no, like seriously, go ahead
+
+" My blatantly stolen .vimrc:
+"   DeMarko's blatantly stolen .vimrc
+"     which you totally should not feel guilty about stealing either
+"     no, like seriously, go ahead
 
 autocmd!                              
 syntax on                          " syntax highlighting is nifty! let's turn it on!

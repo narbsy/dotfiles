@@ -19,9 +19,10 @@
 -- Alt+Shift+Tab        focus previous window
 --
 -- Window management:
--- Win-Shift+1..9       move window to workspace
+-- Win-Shift+1..9       move window to workspace, and follow
 -- Win+Up/Down          move window up/down
 -- Win+C                close window
+-- Alt-F4               "   "   "
 -- Alt+ScrollUp/Down    move focused window up/down
 -- Win+M                move window to master area
 -- Win+N                refresh the current window
@@ -37,7 +38,6 @@
 --
 -- Other:
 -- Win+T                start a terminal
--- Win+R                open the Gnome run dialog
 -- Win+Q                restart XMonad
 -- Win+Shift+Q          display Gnome shutdown dialog
 

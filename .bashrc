@@ -74,7 +74,7 @@ esac
 #    . ~/.bash_aliases
 #fi
 
-#Fuck that shit, aliases GOOO HERE
+#aliases GOOO HERE
 alias andrew='ssh cnarburg@unix.andrew.cmu.edu'
 alias andrewy='andrew -Y'
 alias andrewssh='ssh -xl unix.andrew.cmu.edu'
@@ -92,7 +92,6 @@ alias cluster='ssh -D 6789 -L 50128:127.0.0.1:50128 cnarburg@64.88.164.202'
 alias sml='rlwrap sml'
 alias scheme='rlwrap scheme'
 #for getting memory usage of a process that may span multiple processes, like chromium
-#alias tmem='ps -Ao %mem,comm | grep \$1 | cut --delimiter=" " -f 2 - | awk "{sum+=$1} END {print sum}"'
 total_mem () { 
   cmd=`ps -Ao %mem,comm | grep $1 | sed 's/^\s*//' | cut --delimiter=' ' -f 1 - | (sed 's/^/x+=/' ; echo x) | bc`
   echo "${cmd}"
@@ -104,16 +103,15 @@ if [ -x /usr/bin/dircolors ]; then
     alias ls='ls --color=auto'
     #alias dir='dir --color=auto'
     #alias vdir='vdir --color=auto'
-
     #alias grep='grep --color=auto'
     #alias fgrep='fgrep --color=auto'
     #alias egrep='egrep --color=auto'
 fi
 
 # some more ls aliases
-#alias ll='ls -l'
-#alias la='ls -A'
-#alias l='ls -CF'
+alias ll='ls -l'
+alias la='ls -A'
+alias l='ls -CF'
 
 # enable programmable completion features (you don't need to enable
 # this, if it's already enabled in /etc/bash.bashrc and /etc/profile
@@ -124,4 +122,5 @@ fi
 
 #for RMagick
 export LD_LIBRARY_PATH=/usr/local/lib
+#Add cabal for haskell, llvm stuff for clang
 export PATH=$PATH:~/.cabal/bin:~/bin/llvm/Debug/bin:~/bin/llvm/tools/clang/utils:~/bin/llvm/tools/clang/tools/scan-view
