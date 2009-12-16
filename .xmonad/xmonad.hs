@@ -42,14 +42,12 @@
 -- Win+Shift+Q          display Gnome shutdown dialog
 
 import XMonad
-import XMonad.Util.EZConfig
 import qualified XMonad.StackSet as S
+
 import XMonad.Actions.CycleWS
 import XMonad.Actions.Plane
 import XMonad.Actions.GridSelect
-import XMonad.Config.Gnome
-import XMonad.Hooks.EwmhDesktops
-import XMonad.Hooks.ManageDocks
+
 import XMonad.Layout.Combo
 import XMonad.Layout.Grid
 import XMonad.Layout.LayoutModifier
@@ -61,43 +59,55 @@ import XMonad.Layout.TwoPane
 import XMonad.Layout.WindowNavigation
 import XMonad.Layout.Tabbed
 import XMonad.Layout.ShowWName
-import XMonad.Layout.SimpleDecoration
+--import XMonad.Layout.NoFrillsDecoration
+
 import XMonad.Util.WindowProperties
+import XMonad.Util.EZConfig
+import XMonad.Config.Gnome
+
+import XMonad.Hooks.EwmhDesktops
+import XMonad.Hooks.ManageDocks
+import XMonad.Hooks.FadeInactive
+
 import Control.Monad
 import Data.Ratio
+import System.Exit
 import qualified Data.Map as M
 
 -- defaults on which we build
 -- use e.g. defaultConfig or gnomeConfig
 myBaseConfig = gnomeConfig
 
--- display
--- replace the bright red border with a more stylish colour
-myBorderWidth = 2
-myNormalBorderColor = "#202030"
-myFocusedBorderColor = "#A0A0D0"
+-- window borders
+myBorderWidth = 2 -- pixels
+-- black for inactive so it doesn't distract
+myNormalBorderColor = "#000000"
+-- white for active so it stands out
+myFocusedBorderColor = "#FFFFFF"
 
-  -- workspaces
+-- workspaces
 myWorkspaces = ["web1", "web2", "im"] ++ (miscs 5) ++ ["fullscreen"]
   where miscs = map (("misc" ++) . show) . (flip take) [1..]
 isFullscreen = (== "fullscreen")
 
-  -- layouts
+-- layouts
 basicLayout = Tall nmaster delta ratio where
-nmaster = 1
-delta   = 3/100
-ratio   = 1/2
+  nmaster = 1       -- initial number of master windows
+  delta   = 3/100   -- % change each step of window size when we resize
+  ratio   = 1/2     -- The initial ratio to split windos
 tallLayout = named "tall" $ avoidStruts $ basicLayout
 wideLayout = named "wide" $ avoidStruts $ Mirror basicLayout
 tabbedLayout = named "tabbed" $ avoidStruts $ simpleTabbed
 singleLayout = named "single" $ avoidStruts $ noBorders Full
 fullscreenLayout = named "fullscreen" $ noBorders Full
+
 imLayout = avoidStruts $ reflectHoriz $ withIMs ratio rosters chatLayout where
   chatLayout      = Grid
   ratio           = 1%6
   rosters         = [skypeRoster, pidginRoster]
-  pidginRoster    = And (ClassName "Pidgin") (Role "buddy_list")
-  skypeRoster     = (ClassName "Skype") `And` (Not (Title "Options")) `And` (Not (Role "Chats")) `And` (Not (Role "CallWindowForm"))
+  pidginRoster    = (ClassName "Pidgin") `And` (Role "buddy_list")
+  skypeRoster     = (ClassName "Skype") `And` (Not (Title "Options")) `And` 
+                      (Not (Role "Chats")) `And` (Not (Role "CallWindowForm"))
 
 myLayoutHook = showWName $ fullscreen $ im $ normal where
   normal     = tallLayout ||| wideLayout ||| singleLayout ||| tabbedLayout
@@ -106,12 +116,22 @@ myLayoutHook = showWName $ fullscreen $ im $ normal where
 
   -- special treatment for specific windows:
   -- put the Pidgin and Skype windows in the im workspace
-myManageHook = myFloatHooks <+> imManageHooks <+> manageHook myBaseConfig
+myManageHook = composeAll [ myFloatHooks
+                          , imManageHooks
+                          , manageDocks
+                          , manageHook myBaseConfig
+                          ]
+
 imManageHooks = composeAll [isIM --> moveToIM] where
-  isIM     = foldr1 (<||>) [isPidgin, isSkype]
-  isPidgin = className =? "Pidgin"
-  isSkype  = className =? "Skype"
   moveToIM = doF $ S.shift "im"
+
+myLogHook = fadeOutLogHook . fadeIf q $ 0.85
+  where q = isUnfocused <&&> ((liftM not) isIM)
+
+-- used for both log hook and manage hook
+isIM     = foldr1 (<||>) [isPidgin, isSkype]
+isPidgin = className =? "Pidgin"
+isSkype  = className =? "Skype"
 
 myFloatHooks = composeAll [resource =? "Do" --> doIgnore,
                           resource =? "toggl" --> doIgnore,
@@ -143,32 +163,30 @@ myKeys conf = M.fromList $
   , ((myModMask              , xK_w     ), sendMessage (IncMasterN 1))
   , ((myModMask              , xK_v     ), sendMessage (IncMasterN (-1)))
   , ((myModMask              , xK_q     ), broadcastMessage ReleaseResources >> restart "xmonad" True)
-  , ((myModMask .|. shiftMask, xK_q     ), spawn "gnome-session-save --kill")
+--, ((myModMask .|. shiftMask, xK_q     ), spawn "gnome-session-save --kill")
+  , ((myModMask .|. shiftMask, xK_q     ), io (exitWith ExitSuccess))
   ] 
   
-  ++
   -- Win+1..10 switches to workspace
-  [ ((myModMask, k), windows $ S.greedyView i)
-    | (i, k) <- zip myWorkspaces workspaceKeys
-  ] 
+  ++ [ ((myModMask, k), windows $ S.greedyView i) | (i, k) <- zippedWorkspaceKeys ] 
   
-  ++
   -- mod+shift+1..10 moves window to workspace and switches to that workspace
-  [ ((myModMask .|. shiftMask, k), (windows $ S.shift i) >> (windows $ S.greedyView i))
-    | (i, k) <- zip myWorkspaces workspaceKeys
-  ] 
+  ++ [ ((myModMask .|. shiftMask, k), moveAndSwitch i) | (i, k) <- zippedWorkspaceKeys ] 
 
+  -- Ctrl-Alt-Dir moves the way you think it would on a plane, no wraparound.
+  --  Also maps "move window and follow" with a shift modifier.
   ++
-
   [ ((ctrlAlt .|. mask, k), function (Lines 3) Finite direction)
     | (k, direction) <- zip [xK_Left .. xK_Down] $ enumFrom ToLeft 
     , (mask, function) <- [(0, planeMove), (shiftMask, planeShift)]]
     where 
       workspaceKeys = [xK_1 .. xK_9]
+      zippedWorkspaceKeys = zip myWorkspaces workspaceKeys
+      moveAndSwitch i = (windows $ S.shift i) >> (windows $ S.greedyView i)
       ctrlAlt = controlMask .|. altMask
         
 
--- mouse bindings that mimic Gnome's
+-- mouse bindings that mimic Gnome's, with the bonus of alt-right-click resize
 myMouseBindings (XConfig {XMonad.modMask = modMask}) = M.fromList $
     [ ((altMask, button1), (\w -> focus w >> mouseMoveWindow w))
     , ((altMask, button2), (\w -> focus w >> (withFocused $ windows . S.sink)))
@@ -177,28 +195,15 @@ myMouseBindings (XConfig {XMonad.modMask = modMask}) = M.fromList $
     , ((altMask, button5), (const $ windows S.swapDown))
     ]
 
--- put it all together
-main = xmonad $ myBaseConfig
-                {   modMask = myModMask
-                  , workspaces = myWorkspaces
-                  , layoutHook = myLayoutHook
-                  , manageHook = myManageHook
-                  , borderWidth = myBorderWidth
-                  , normalBorderColor = myNormalBorderColor
-                  , focusedBorderColor = myFocusedBorderColor
-                  , keys = myKeys
-                  , mouseBindings = myMouseBindings
-                }
-
 -- modified version of XMonad.Layout.IM --
 
-  -- | Data type for LayoutModifier which converts given layout to IM-layout
-  -- (with dedicated space for the roster and original layout for chat windows)
+-- | Data type for LayoutModifier which converts given layout to IM-layout
+-- (with dedicated space for the roster and original layout for chat windows)
 data AddRosters a = AddRosters Rational [Property] deriving (Read, Show)
 
 instance LayoutModifier AddRosters Window where
   modifyLayout (AddRosters ratio props) = applyIMs ratio props
-  modifierDescription _                = "IMs"
+  modifierDescription _                 = "IMs"
 
 -- | Modifier which converts given layout to IMs-layout (with dedicated
 -- space for rosters and original layout for chat windows)
@@ -232,4 +237,24 @@ applyIMs ratio props wksp rect = do
     let filteredStack = stack >>= S.filter (`notElem` rosters)
     wrs <- runLayout (wksp {S.stack = filteredStack}) chatsRect
     return ((zip rosters rosterRects) ++ fst wrs, snd wrs)
+
+-------------------------------------------------------------------------------
+-- put it all together
+main = do
+        -- For fancy effects
+        spawn "xcompmgr"
+        -- gnome-do dies for some reason when we restart if we are not it's parent. So, spawn it anyways.
+        spawn "gnome-do"
+        xmonad $ myBaseConfig {  
+            modMask = myModMask
+          , workspaces = myWorkspaces
+          , layoutHook = myLayoutHook
+          , manageHook = myManageHook
+          , logHook    = myLogHook
+          , borderWidth = myBorderWidth
+          , normalBorderColor = myNormalBorderColor
+          , focusedBorderColor = myFocusedBorderColor
+          , keys = myKeys
+          , mouseBindings = myMouseBindings
+        }
 
