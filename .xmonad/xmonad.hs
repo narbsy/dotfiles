@@ -59,7 +59,11 @@ import XMonad.Layout.TwoPane
 import XMonad.Layout.WindowNavigation
 import XMonad.Layout.Tabbed
 import XMonad.Layout.ShowWName
---import XMonad.Layout.NoFrillsDecoration
+import XMonad.Layout.NoFrillsDecoration
+import XMonad.Layout.BorderResize
+import XMonad.Layout.Maximize
+import XMonad.Layout.Minimize
+import XMonad.Layout.PositionStoreFloat
 
 import XMonad.Util.WindowProperties
 import XMonad.Util.EZConfig
@@ -67,11 +71,14 @@ import XMonad.Config.Gnome
 
 import XMonad.Hooks.EwmhDesktops
 import XMonad.Hooks.ManageDocks
+import XMonad.Hooks.ManageHelpers -- isInProperty
 import XMonad.Hooks.FadeInactive
 
 import Control.Monad
+import Control.Concurrent
 import Data.Ratio
 import System.Exit
+import System.Posix
 import qualified Data.Map as M
 
 -- defaults on which we build
@@ -88,17 +95,25 @@ myFocusedBorderColor = "#FFFFFF"
 -- workspaces
 myWorkspaces = ["web1", "web2", "im"] ++ (miscs 5) ++ ["fullscreen"]
   where miscs = map (("misc" ++) . show) . (flip take) [1..]
-isFullscreen = (== "fullscreen")
 
 -- layouts
 basicLayout = Tall nmaster delta ratio where
   nmaster = 1       -- initial number of master windows
   delta   = 3/100   -- % change each step of window size when we resize
   ratio   = 1/2     -- The initial ratio to split windos
-tallLayout = named "tall" $ avoidStruts $ basicLayout
-wideLayout = named "wide" $ avoidStruts $ Mirror basicLayout
-tabbedLayout = named "tabbed" $ avoidStruts $ simpleTabbed
-singleLayout = named "single" $ avoidStruts $ noBorders Full
+namedLayout name = named name . avoidStruts
+tallLayout = namedLayout "tall" basicLayout
+--tallLayout = named "tall" $ avoidStruts $ basicLayout
+--wideLayout = named "wide" $ avoidStruts $ Mirror basicLayout
+wideLayout = namedLayout "wide" $ Mirror basicLayout
+-- Tabbed layout is single-layout with an extra bar on top of the windows w/ their title
+--tabbedLayout = named "tabbed" $ avoidStruts $ simpleTabbed
+tabbedLayout = namedLayout "tabbed" simpleTabbed
+-- Single layout is full-screen that keeps the gnome-bar visible
+--singleLayout = named "single" $ avoidStruts $ noBorders Full
+singleLayout = namedLayout "single" $ noBorders Full
+floatingLayout = namedLayout "floating" $ noFrillsDeco shrinkText defaultTheme $ maximize $ borderResize $ positionStoreFloat
+-- Fullscreen is like single, except that it hides the gnome-bar
 fullscreenLayout = named "fullscreen" $ noBorders Full
 
 imLayout = avoidStruts $ reflectHoriz $ withIMs ratio rosters chatLayout where
@@ -110,7 +125,7 @@ imLayout = avoidStruts $ reflectHoriz $ withIMs ratio rosters chatLayout where
                       (Not (Role "Chats")) `And` (Not (Role "CallWindowForm"))
 
 myLayoutHook = showWName $ fullscreen $ im $ normal where
-  normal     = tallLayout ||| wideLayout ||| singleLayout ||| tabbedLayout
+  normal     = tallLayout ||| wideLayout ||| singleLayout ||| tabbedLayout ||| floatingLayout
   fullscreen = onWorkspace "fullscreen" fullscreenLayout
   im         = onWorkspace "im" imLayout
 
@@ -133,11 +148,16 @@ isIM     = foldr1 (<||>) [isPidgin, isSkype]
 isPidgin = className =? "Pidgin"
 isSkype  = className =? "Skype"
 
-myFloatHooks = composeAll [resource =? "Do" --> doIgnore,
-                          resource =? "toggl" --> doIgnore,
-                          className =? "com-yuuguu-client-bootstrapping-YuuguuBootStrapMain" --> doFloat,
-                          className =? "XTerm" --> doFloat,
-                          resource =? "tomboy" --> doFloat]
+myFloatHooks = composeAll [ resource =? "Do" --> doIgnore
+                          , resource =? "toggl" --> doIgnore
+                          , className =? "com-yuuguu-client-bootstrapping-YuuguuBootStrapMain" --> doFloat
+                          , className =? "XTerm" --> doFloat
+                          , resource =? "tomboy" --> doFloat
+                          , isSplash --> doIgnore
+                          ]
+
+-- Found on reddit.com/r/xmonad for floating all splashy windows
+isSplash = isInProperty "_NET_WM_WINDOW_TYPE" "_NET_WM_WINDOW_TYPE_SPLASH"
 
   -- Mod4 is the Super / Windows key
 myModMask = mod4Mask
@@ -163,8 +183,13 @@ myKeys conf = M.fromList $
   , ((myModMask              , xK_w     ), sendMessage (IncMasterN 1))
   , ((myModMask              , xK_v     ), sendMessage (IncMasterN (-1)))
   , ((myModMask              , xK_q     ), broadcastMessage ReleaseResources >> restart "xmonad" True)
---, ((myModMask .|. shiftMask, xK_q     ), spawn "gnome-session-save --kill")
   , ((myModMask .|. shiftMask, xK_q     ), io (exitWith ExitSuccess))
+
+  -- Maximizing
+  , ((myModMask              , xK_z     ), withFocused (sendMessage . maximizeRestore))
+
+  -- Minimizing
+  , ((myModMask              , xK_x     ), withFocused (\f -> sendMessage (MinimizeWin f)))
   ] 
   
   -- Win+1..10 switches to workspace
@@ -242,9 +267,9 @@ applyIMs ratio props wksp rect = do
 -- put it all together
 main = do
         -- For fancy effects
-        spawn "xcompmgr"
+        spawn "xcompmgr -cC"
         -- gnome-do dies for some reason when we restart if we are not it's parent. So, spawn it anyways.
-        spawn "gnome-do"
+        spawn "gnome-do --debug > ~/gnome-do-stdout.log 2>~/gnome-do-stderr.log"
         xmonad $ myBaseConfig {  
             modMask = myModMask
           , workspaces = myWorkspaces
