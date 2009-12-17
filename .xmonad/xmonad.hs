@@ -154,10 +154,13 @@ myFloatHooks = composeAll [ resource =? "Do" --> doIgnore
                           , className =? "XTerm" --> doFloat
                           , resource =? "tomboy" --> doFloat
                           , isSplash --> doIgnore
+                          --, isSkypeWeirdness --> doFloat
                           ]
 
 -- Found on reddit.com/r/xmonad for floating all splashy windows
 isSplash = isInProperty "_NET_WM_WINDOW_TYPE" "_NET_WM_WINDOW_TYPE_SPLASH"
+-- Hmmm, I wonder
+--isSkypeWeirdness = (liftM not) . hasAnyProperty ["WM_WINDOW_ROLE"]
 
   -- Mod4 is the Super / Windows key
 myModMask = mod4Mask
@@ -267,7 +270,7 @@ applyIMs ratio props wksp rect = do
 -- put it all together
 main = do
         -- For fancy effects
-        spawn "xcompmgr -cC"
+        spawn "xcompmgr -C"
         -- gnome-do dies for some reason when we restart if we are not it's parent. So, spawn it anyways.
         spawn "gnome-do --debug > ~/gnome-do-stdout.log 2>~/gnome-do-stderr.log"
         xmonad $ myBaseConfig {  
