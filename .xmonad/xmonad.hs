@@ -148,12 +148,12 @@ isIM     = foldr1 (<||>) [isPidgin, isSkype]
 isPidgin = className =? "Pidgin"
 isSkype  = className =? "Skype"
 
-myFloatHooks = composeAll [ resource =? "Do" --> doIgnore
-                          , resource =? "toggl" --> doIgnore
+myFloatHooks = composeAll [ resource  =? "Do"  --> doIgnore
+                          , resource  =? "toggl"  --> doIgnore
                           , className =? "com-yuuguu-client-bootstrapping-YuuguuBootStrapMain" --> doFloat
-                          , className =? "XTerm" --> doFloat
-                          , resource =? "tomboy" --> doFloat
-                          , isSplash --> doIgnore
+                          , resource  =? "tomboy" --> doCenterFloat
+                          , isSplash  -->  doCenterFloat
+                          , isDialog  --> doCenterFloat
                           --, isSkypeWeirdness --> doFloat
                           ]
 
@@ -161,6 +161,7 @@ myFloatHooks = composeAll [ resource =? "Do" --> doIgnore
 isSplash = isInProperty "_NET_WM_WINDOW_TYPE" "_NET_WM_WINDOW_TYPE_SPLASH"
 -- Hmmm, I wonder
 --isSkypeWeirdness = (liftM not) . hasAnyProperty ["WM_WINDOW_ROLE"]
+isPreferencesWindow = isInProperty "WM_WINDOW_ROLE" "Preferences"
 
   -- Mod4 is the Super / Windows key
 myModMask = mod4Mask
@@ -187,7 +188,6 @@ myKeys conf = M.fromList $
   , ((myModMask              , xK_v     ), sendMessage (IncMasterN (-1)))
   , ((myModMask              , xK_q     ), broadcastMessage ReleaseResources >> restart "xmonad" True)
   , ((myModMask .|. shiftMask, xK_q     ), io (exitWith ExitSuccess))
-
   -- Maximizing
   , ((myModMask              , xK_z     ), withFocused (sendMessage . maximizeRestore))
 
@@ -270,12 +270,13 @@ applyIMs ratio props wksp rect = do
 -- put it all together
 main = do
         -- For fancy effects
-        spawn "xcompmgr -C"
+        -- NOTE: THIS IS RIDICULOUSLY SLOW FOR SOME REASON on Gentoo
+        -- spawn "xcompmgr -C"
         -- gnome-do dies for some reason when we restart if we are not it's parent. So, spawn it anyways.
         spawn "gnome-do --debug > ~/gnome-do-stdout.log 2>~/gnome-do-stderr.log"
         xmonad $ myBaseConfig {  
             modMask = myModMask
-          , workspaces = myWorkspaces
+          , workspaces = myWorkspaces 
           , layoutHook = myLayoutHook
           , manageHook = myManageHook
           , logHook    = myLogHook
