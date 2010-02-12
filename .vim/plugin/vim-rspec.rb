@@ -14,7 +14,6 @@ end
 puts "* Parsed with Hpricot (http://wiki.github.com/why/hpricot)"
 puts " "
 
-
 (doc/"div[@class='example_group']").each do |example|
 	puts "[#{(example/"dl/dt").inner_html}]"
 	(example/"dd").each do |dd|

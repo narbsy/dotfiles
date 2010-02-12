@@ -1,6 +1,7 @@
 module LoggerLib
   def self.append_features(mod)
-    super if ENV['RAILS_ENV']
+    super if ENV['RAILS_ENV'] || Rails.env
+    true
   end
 
   def self.after_included
