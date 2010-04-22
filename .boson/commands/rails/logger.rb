@@ -1,7 +1,10 @@
 module LoggerLib
   def self.append_features(mod)
-    super if ENV['RAILS_ENV'] || Rails.env
-    true
+    if ENV['RAILS_ENV'] || (Object.const_defined? :Rails)
+      super
+    else
+      false
+    end
   end
 
   def self.after_included
