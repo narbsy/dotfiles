@@ -78,8 +78,8 @@ esac
 alias andrew='ssh cnarburg@unix.andrew.cmu.edu'
 alias andrewy='andrew -Y'
 alias andrewssh='ssh -xl unix.andrew.cmu.edu'
-alias vps='ssh 206.225.16.237'
-alias vps_root='ssh 206.225.10.200'
+alias vps='ssh 216.59.3.125'
+# alias vps_root='ssh 206.225.10.200'
 alias isrunning='ps -ef | grep'
 alias gems='gem'
 alias migrate='rake db:migrate'
@@ -91,6 +91,8 @@ alias svnrmall='svn status | grep "^\!" | sed -e "s/! *//" | sed -e "s/ /\\\\ /g
 alias cluster='ssh -D 6789 -L 50128:127.0.0.1:50128 cnarburg@64.88.164.202'
 alias sml='rlwrap sml'
 alias scheme='rlwrap scheme'
+alias git='git-achievements'
+
 #for getting memory usage of a process that may span multiple processes, like chromium
 total_mem () { 
   cmd=`ps -Ao %mem,comm | grep $1 | sed 's/^\s*//' | cut --delimiter=' ' -f 1 - | (sed 's/^/x+=/' ; echo x) | bc`
@@ -124,3 +126,19 @@ fi
 export LD_LIBRARY_PATH=/usr/local/lib
 #Add cabal for haskell, llvm stuff for clang
 export PATH=$PATH:~/.cabal/bin:~/bin/llvm/Debug/bin:~/bin/llvm/tools/clang/utils:~/bin/llvm/tools/clang/tools/scan-view
+# For java apps that misbehave
+export AWT_TOOLKIT=MToolkit
+
+# For git-achievements
+export PATH="$PATH:~/bin/git-achievements"
+
+# The bash history file should save last 10000 commands. Default is 500.
+export HISTFILESIZE=10000
+# The number of commands to remember in the in-memory command history, as
+# reported by the 'history' built-in. Default is 500.
+export HISTSIZE=1000
+# Don't put duplicate lines in the history. See bash(1) for more options
+export HISTCONTROL=ignoreboth
+
+PROMPT_COMMAND="history -a; $PROMPT_COMMAND"
+
