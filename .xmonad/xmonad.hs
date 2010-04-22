@@ -73,6 +73,7 @@ import XMonad.Hooks.EwmhDesktops
 import XMonad.Hooks.ManageDocks
 import XMonad.Hooks.ManageHelpers -- isInProperty
 import XMonad.Hooks.FadeInactive
+import XMonad.Hooks.SetWMName
 
 import Control.Monad
 import Control.Concurrent
@@ -83,7 +84,7 @@ import qualified Data.Map as M
 
 -- defaults on which we build
 -- use e.g. defaultConfig or gnomeConfig
-myBaseConfig = gnomeConfig
+myBaseConfig = gnomeConfig 
 
 -- window borders
 myBorderWidth = 2 -- pixels
@@ -274,7 +275,7 @@ main = do
         -- spawn "xcompmgr -C"
         -- gnome-do dies for some reason when we restart if we are not it's parent. So, spawn it anyways.
         spawn "gnome-do --debug > ~/gnome-do-stdout.log 2>~/gnome-do-stderr.log"
-        xmonad $ myBaseConfig {  
+        xmonad $ ewmh myBaseConfig {  
             modMask = myModMask
           , workspaces = myWorkspaces 
           , layoutHook = myLayoutHook
@@ -285,5 +286,7 @@ main = do
           , focusedBorderColor = myFocusedBorderColor
           , keys = myKeys
           , mouseBindings = myMouseBindings
+          -- For java/swing compatibility
+          , startupHook = setWMName "LG3D"
         }
 
