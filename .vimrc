@@ -1,4 +1,3 @@
-
 " My blatantly stolen .vimrc:
 "   DeMarko's blatantly stolen .vimrc
 "     which you totally should not feel guilty about stealing either
@@ -116,6 +115,9 @@ if has("gui_running")
 else
   colorscheme dante
 endif
+
+" I's want to make sure that this puts a space betwixt comments.
+let NERDSpaceDelims = 1
 
 "Load python specific vimrc
 source ~/.vimrc-python

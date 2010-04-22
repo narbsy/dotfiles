@@ -19,14 +19,17 @@ puts " "
 	(example/"dd").each do |dd|
 		txt = (dd/"span:first").inner_html
 		puts "#{classes[dd[:class]]} #{txt}"
-		next if dd[:class]!="spec failed"
-		failure  = (dd/"div[@class='failure']")
-		msg		= (failure/"div[@class='message']/pre").inner_html
-		back		= (failure/"div[@class='backtrace']/pre").inner_html
-		ruby		= (failure/"pre[@class='ruby']/code").inner_html.scan(/(<span class="linenum">)(\d+)(<\/span>)([^<]+)/).map {|elem| "  "+elem[1]+": "+elem[3].chomp+"\n"}.join
+		next unless dd[:class] == "spec failed"
+		failure = (dd/"div[@class='failure']")
+    # this is typically one line
+		msg		  = (failure/"div[@class='message']/pre").inner_html
+    # as this is multiple lines, make sure all are available
+		back		= (failure/"div[@class='backtrace']/pre").inner_html.lines.map { |line| "  " + line }.join
+    # the last line doesn't have a \n at the end, it seems.
+    ruby    = (failure/"pre[@class='ruby']/code").text.lines.map { |line| "  " + line.gsub(/^(\d+)\s*(.*?)/, '\1: \2') }.join "\n"
 		puts "  #{msg}"
-		puts "  #{back}"
-		puts ruby
+		puts back
+    puts ruby
 	end
 	puts " "
 end
