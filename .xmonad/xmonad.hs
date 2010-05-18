@@ -44,9 +44,10 @@
 import XMonad
 import qualified XMonad.StackSet as S
 
-import XMonad.Actions.CycleWS
-import XMonad.Actions.Plane
-import XMonad.Actions.GridSelect
+import XMonad.Actions.CycleWS     -- Use arrow keys to navigate betwixt workspaces
+import XMonad.Actions.Plane       -- To get a 3x3 box of desktops
+import XMonad.Actions.GridSelect  -- Snazzy way to select from a lot of windows. They need descriptive titles though
+import XMonad.Actions.CopyWindow  -- To have a window permanently follow the desktop, or emulate this behavior.
 
 import XMonad.Layout.Combo
 import XMonad.Layout.Grid
@@ -63,7 +64,7 @@ import XMonad.Layout.NoFrillsDecoration
 import XMonad.Layout.BorderResize
 import XMonad.Layout.Maximize
 import XMonad.Layout.Minimize
-import XMonad.Layout.PositionStoreFloat
+-- import XMonad.Layout.PositionStoreFloat
 
 import XMonad.Util.WindowProperties
 import XMonad.Util.EZConfig
@@ -113,7 +114,7 @@ tabbedLayout = namedLayout "tabbed" simpleTabbed
 -- Single layout is full-screen that keeps the gnome-bar visible
 --singleLayout = named "single" $ avoidStruts $ noBorders Full
 singleLayout = namedLayout "single" $ noBorders Full
-floatingLayout = namedLayout "floating" $ noFrillsDeco shrinkText defaultTheme $ maximize $ borderResize $ positionStoreFloat
+-- floatingLayout = namedLayout "floating" $ noFrillsDeco shrinkText defaultTheme $ maximize $ borderResize $ positionStoreFloat
 -- Fullscreen is like single, except that it hides the gnome-bar
 fullscreenLayout = named "fullscreen" $ noBorders Full
 
@@ -126,7 +127,7 @@ imLayout = avoidStruts $ reflectHoriz $ withIMs ratio rosters chatLayout where
                       (Not (Role "Chats")) `And` (Not (Role "CallWindowForm"))
 
 myLayoutHook = showWName $ fullscreen $ im $ normal where
-  normal     = tallLayout ||| wideLayout ||| singleLayout ||| tabbedLayout ||| floatingLayout
+  normal     = tallLayout ||| wideLayout ||| singleLayout ||| tabbedLayout
   fullscreen = onWorkspace "fullscreen" fullscreenLayout
   im         = onWorkspace "im" imLayout
 
@@ -173,8 +174,12 @@ myKeys conf = M.fromList $
   [ ((myModMask              , xK_t     ), spawn $ XMonad.terminal conf)
   --, ((myModMask              , xK_r     ), spawn $ (XMonad.terminal conf) ++ " -e irb") --Annoying with Redcar
   , ((myModMask              , xK_f     ), goToSelected defaultGSConfig)
+  , ((myModMask              , xK_a     ), windows copyToAll) -- Make focused window always visible
+  , ((myModMask .|. shiftMask, xK_a     ), killAllOtherCopies) -- Toggle window state back to only visible on current workspace
+  -- Kill me some windows
   , ((myModMask              , xK_c     ), kill)
   , ((altMask                , xK_F4    ), kill)
+  -- Change layout
   , ((myModMask              , xK_space ), sendMessage NextLayout)
   , ((myModMask              , xK_n     ), refresh)
   , ((myModMask              , xK_m     ), windows S.swapMaster)
