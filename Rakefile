@@ -7,7 +7,13 @@ require 'rake'
 # 
 
 desc "install the dot files into user's home directory"
-task :install do
+task :install, :file do |t, args|
+  puts args
+  if args.file then
+    replace_file(args.file)
+    exit
+  end
+  
   replace_all = false
   Dir['**/.*'].each do |file|
     next if %w[Rakefile .git . ..].include? file
