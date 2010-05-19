@@ -72,7 +72,7 @@ import XMonad.Config.Gnome
 
 import XMonad.Hooks.EwmhDesktops
 import XMonad.Hooks.ManageDocks
-import XMonad.Hooks.ManageHelpers -- isInProperty
+import XMonad.Hooks.ManageHelpers -- isInProperty, isFullscreen
 import XMonad.Hooks.FadeInactive
 import XMonad.Hooks.SetWMName
 
@@ -156,6 +156,7 @@ myFloatHooks = composeAll [ resource  =? "Do"  --> doIgnore
                           , resource  =? "tomboy" --> doCenterFloat
                           , isSplash  -->  doCenterFloat
                           , isDialog  --> doCenterFloat
+                          , isFullscreen --> (doF S.focusDown <+> doFullFloat)
                           --, isSkypeWeirdness --> doFloat
                           ]
 
