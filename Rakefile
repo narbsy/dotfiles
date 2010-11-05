@@ -18,15 +18,12 @@ task :install, :file do |t, args|
   Dir['**/.*'].each do |file|
     next if %w[Rakefile .git . ..].include? file
 
-    if File.directory? file
-      # Make the folder tree, then copy the files
-      FileUtils.mkdir_p(file)
+    replace_all = place_file replace_all, file
 
+    if File.directory? file
       Dir["#{file}/**/*"].each do |sub_file|
         replace_all = place_file replace_all, sub_file
       end
-    else # it's probably a file, so just place it.
-      replace_all = place_file replace_all, file
     end
   end
 end
