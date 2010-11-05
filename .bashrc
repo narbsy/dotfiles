@@ -125,12 +125,9 @@ fi
 #for RMagick
 export LD_LIBRARY_PATH=/usr/local/lib
 #Add cabal for haskell, llvm stuff for clang
-export PATH=$PATH:~/.cabal/bin:~/bin/llvm/Debug/bin:~/bin/llvm/tools/clang/utils:~/bin/llvm/tools/clang/tools/scan-view
+export PATH=~/bin:$PATH:~/.cabal/bin
 # For java apps that misbehave
 export AWT_TOOLKIT=MToolkit
-
-# For git-achievements
-export PATH="$PATH:~/bin/git-achievements"
 
 # The bash history file should save last 10000 commands. Default is 500.
 export HISTFILESIZE=10000
@@ -142,3 +139,4 @@ export HISTCONTROL=ignoreboth
 
 PROMPT_COMMAND="history -a; $PROMPT_COMMAND"
 
+source /usr/local/rvm/scripts/rvm
