@@ -1,3 +1,5 @@
 [user]
 	email = chris.narburgh@gmail.com
 	name = Chris Narburgh
+[core]
+	excludesfile = ~/.gitignore
